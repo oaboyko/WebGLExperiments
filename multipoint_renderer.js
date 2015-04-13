@@ -1,12 +1,11 @@
-var VERTEX_SHADER=
+var VSHADER_SOURCE=
     'attribute vec4 a_Position;\n' +
     'void main(){\n' +
     '	gl_Position = a_Position;\n' +
     '	gl_PointSize = 10.0;\n' +
     '}\n';
 
-var FRAGMENT_SHADER=
-    'precision mediump float;\n' +
+var FSHADER_SOURCE=
     'void main(){\n' +
     '	gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n ' +
     '}\n';
@@ -27,8 +26,13 @@ function main(){
     var fragment_shader = gl.createShader(gl.FRAGMENT_SHADER);
     var program = gl.createProgram();
 
-    gl.shaderSource(vertex_shader, VERTEX_SHADER);
-    gl.shaderSource(fragment_shader, FRAGMENT_SHADER);
+    if(!gl){
+	alert("Could not get webgl context.");
+	return;
+    }
+
+    gl.shaderSource(vertex_shader, VSHADER_SOURCE);
+    gl.shaderSource(fragment_shader, FSHADER_SOURCE);
 
     gl.compileShader(vertex_shader);
     gl.compileShader(fragment_shader);
@@ -48,25 +52,35 @@ function main(){
 
     gl.linkProgram(program);
 
+    var a_Position = gl.getAttribLocation(program, 'a_Position');
+
+    if(a_Position < 0){
+	console.log('Failed to get the storage location of the a_Position attribute');
+        return;
+    }
+
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     //gl.useProgram(program);
 
-    var n = initVertexBuffers(gl);
+    var n = initVertexBuffers(gl, program);
     if(n < 0){
-	alert("Failed to set the position of the verticies.");
+	console.log("Failed to set the position of the verticies.");
     }
+
+    gl.useProgram(program);
 
     gl.drawArrays(gl.POINTS, 0, n);
 
 }
 
-function initVertexBuffers(gl){
+function initVertexBuffers(gl, program){
 
     var vertices = new Float32Array([
 	0.0, 0.5,  -0.5, -0.5,  0.5, -0.5
     ]);
+
 
     var n = 3;
 
@@ -80,7 +94,12 @@ function initVertexBuffers(gl){
     gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
     gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
-    var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+    var a_Position = gl.getAttribLocation(program, 'a_Position');
+
+    if(a_Position < 0){
+	console.log('Failed to get the storage location of the a_Position attribute in buffers.');
+        return -1;
+    }
     
     gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
 
